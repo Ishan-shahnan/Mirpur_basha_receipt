@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ভাড়া রসিদ অটোমেশন ড্যাশবোর্ড</title>
+    <!-- Tailwind CSS for UI styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for premium Bengali look -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+        }
+        /* A4 Page Styling for screen preview and print */
+        .a4-container {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 12mm 15mm;
+            background: white;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        
+        .receipt-card {
+            height: 86mm; /* Fits exactly three receipts on A4 with margins */
+            border: 2px dashed #4b5563;
+            padding: 12px 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            box-sizing: border-box;
+            background-color: #ffffff;
+        }
+
+        /* Dot pattern for a classic voucher feel on margins */
+        .receipt-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-image: radial-gradient(#9ca3af 2px, transparent 2px);
+            background-size: 4px 8px;
+        }
+
+        /* Print Media Queries */
+        @media print {
+            /* Hide all UI elements except the receipts container */
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .a4-container {
+                width: 210mm;
+                height: 297mm;
+                padding: 10mm 15mm;
+                box-shadow: none !important;
+                margin: 0 !important;
+                page-break-after: avoid;
+                page-break-before: avoid;
+            }
+            .receipt-card {
+                height: 89mm; /* Sightly larger to fill the page nicely in print mode */
+                page-break-inside: avoid;
+            }
+            /* Reset colors for printing */
+            th {
+                background-color: #f3f4f6 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+    <!-- Interactive Dashboard & Configuration (Hidden on Print) -->
+    <div class="no-print container mx-auto px-4 py-8 max-w-6xl">
+        <header class="mb-8 text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-200 pb-5">
+            <div>
+                <h1 class="text-3xl font-bold text-indigo-900 flex items-center justify-center md:justify-start gap-2">
+                    <i class="fa-solid fa-file-invoice-dollar text-indigo-600"></i>
+                    ভাড়া রসিদ অটোমেশন ড্যাশবোর্ড
+                </h1>
+                <p class="text-slate-500 mt-1">सहजেই ফ্ল্যাটের ভাড়ার হিসাব তৈরি করুন এবং এক ক্লিকে একটি A4 পাতায় প্রিন্ট করুন।</p>
+            </div>
+            <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 flex items-center gap-2 transform hover:scale-[1.02]">
+                <i class="fa-solid fa-print"></i>
+                রিসিপ্ট প্রিন্ট করুন (A4)
+            </button>
+        </header>
+
+        <!-- Master Global Settings -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-150 mb-8">
+            <h2 class="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-calendar-days text-indigo-500"></i>
+                সাধারণ সেটিংস (মাস ও বছর)
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">রসিদের মাস</label>
+                    <select id="globalMonth" class="w-full rounded-lg border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition" onchange="syncGlobalSettings()">
+                        <option value="জানুয়ারি">জানুয়ারি</option>
+                        <option value="ফেব্রুয়ারি">ফেব্রুয়ারি</option>
+                        <option value="মার্চ">মার্চ</option>
+                        <option value="এপ্রিল">এপ্রিল</option>
+                        <option value="মে">মে</option>
+                        <option value="জুন" selected>জুন</option>
+                        <option value="জুলাই">জুলাই</option>
+                        <option value="আগস্ট">আগস্ট</option>
+                        <option value="সেপ্টেম্বর">সেপ্টেম্বর</option>
+                        <option value="অক্টোবর">অক্টোবর</option>
+                        <option value="নভেম্বর">নভেম্বর</option>
+                        <option value="ডিসেম্বর">ডিসেম্বর</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">রসিদের বছর</label>
+                    <input type="text" id="globalYear" value="২০২৬" class="w-full rounded-lg border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition" oninput="syncGlobalSettings()" placeholder="যেমন: ২০২৬">
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Grid for Flat Bill Management -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+            
+            <!-- Flat 1A Controller -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-150 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-blue-900"> আমিন</h3>
+                    <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded">১ম তলা</span>
+                </div>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500">বাড়ি ভাড়া</label>
+                            <input type="number" id="rent_1a" value="5500" class="w-full rounded-md border border-slate-200 px-2 py-1.5 text-sm bg-slate-50" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500">গ্যাস বিল</label>
+                            <input type="number" id="gas_1a" value="1000" class="w-full rounded-md border border-slate-200 px-2 py-1.5 text-sm bg-slate-50" readonly>
+                        </div>
+                    </div>
+                    <hr class="border-dashed">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">বিদ্যুৎ বিল (পরিবর্তনশীল)</label>
+                        <input type="number" id="elec_1a" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">পানি বিল (পরিবর্তনশীল)</label>
+                        <input type="number" id="water_1a" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ময়লা ও গার্ড বিল (পরিবর্তনশীল)</label>
+                        <input type="number" id="guard_1a" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">অন্যান্য চার্জ (পরিবর্তনশীল)</label>
+                        <input type="number" id="other_1a" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flat 1B Controller -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-150 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-emerald-500"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-emerald-900">জাকির</h3>
+                    <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded">১ম তলা</span>
+                </div>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500">বাড়ি ভাড়া</label>
+                            <input type="number" id="rent_1b" value="5000" class="w-full rounded-md border border-slate-200 px-2 py-1.5 text-sm bg-slate-50" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500">গ্যাস বিল</label>
+                            <input type="number" id="gas_1b" value="1080" class="w-full rounded-md border border-slate-200 px-2 py-1.5 text-sm bg-slate-50" readonly>
+                        </div>
+                    </div>
+                    <hr class="border-dashed">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">বিদ্যুৎ বিল (পরিবর্তনশীল)</label>
+                        <input type="number" id="elec_1b" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">পানি বিল (পরিবর্তনশীল)</label>
+                        <input type="number" id="water_1b" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ময়লা ও গার্ড বিল (পরিবর্তনশীল)</label>
+                        <input type="number" id="guard_1b" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">অন্যান্য চার্জ (পরিবর্তনশীল)</label>
+                        <input type="number" id="other_1b" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-emerald-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flat FF Controller -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-150 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-amber-500"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-amber-900">ফ্ল্যাট FF (ঈশান)</h3>
+                    <span class="bg-amber-100 text-amber-800 text-xs font-semibold px-2.5 py-1 rounded">২য় তলা</span>
+                </div>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500">বাড়ি ভাড়া</label>
+                            <input type="number" id="rent_ff" value="6500" class="w-full rounded-md border border-slate-200 px-2 py-1.5 text-sm bg-slate-50" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500">গ্যাস বিল</label>
+                            <input type="number" id="gas_ff" value="1080" class="w-full rounded-md border border-slate-200 px-2 py-1.5 text-sm bg-slate-50" readonly>
+                        </div>
+                    </div>
+                    <hr class="border-dashed">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">বিদ্যুৎ বিল (পরিবর্তনশীল)</label>
+                        <input type="number" id="elec_ff" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">পানি বিল (পরিবর্তনশীল)</label>
+                        <input type="number" id="water_ff" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">ময়লা ও গার্ড বিল (পরিবর্তনশীল)</label>
+                        <input type="number" id="guard_ff" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">অন্যান্য চার্জ (পরিবর্তনশীল)</label>
+                        <input type="number" id="other_ff" value="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none transition font-semibold" oninput="updateReceipts()">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <h2 class="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-eye text-indigo-500"></i>
+            প্রিন্ট প্রিভিউ (A4 সাইজ লেআউট)
+        </h2>
+    </div>
+
+    <!-- Printable A4 Wrapper (This will remain when printed) -->
+    <div class="a4-container flex flex-col justify-between gap-4">
+        
+        <!-- ==================== RECEIPT 1: FLAT 1A ==================== -->
+        <div class="receipt-card">
+            <!-- Header -->
+            <div class="flex items-start justify-between border-b-2 border-slate-800 pb-2">
+                <div class="flex-1">
+                    <h4 class="text-2xl font-black text-slate-900 tracking-wide">বাড়ি ভাড়ার রসিদ</h4>
+                    <p class="text-xs text-slate-700 mt-0.5">ঠিকানা: ১০০/৬- এ, মধ্য পীরের বাগ (বোম্বাই গলি), ঢাকা- ১২১৬</p>
+                </div>
+                <div class="text-right flex flex-col items-end">
+                    <span class="text-lg font-bold bg-slate-900 text-white px-3 py-1 rounded">ফ্ল্যাট: 1A (আমিন)</span>
+                </div>
+            </div>
+
+            <!-- Metadata Info Row -->
+            <div class="flex justify-between items-center text-sm font-semibold my-1.5 text-slate-800">
+                <div>মাস ও বছর: <span id="viewMonthYear_1a" class="border-b border-dashed border-slate-800 px-2 text-indigo-900 font-bold">জুন ২০২৬</span></div>
+                <div>তারিখ: <span class="border-b border-dashed border-slate-800 px-6"></span></div>
+            </div>
+
+            <!-- Bill Breakdown Table -->
+            <div class="flex-grow">
+                <table class="w-full text-xs text-left text-slate-800 border border-slate-800">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-800">
+                            <th class="py-1 px-3 border-r border-slate-800">বিবরণ</th>
+                            <th class="py-1 px-3 text-right w-[150px]">টাকার পরিমাণ (টাকা/-)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-300">
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">১. বাসা ভাড়া</td>
+                            <td class="py-1 px-3 text-right font-semibold" id="tblRent_1a">৫,৫০০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">২. গ্যাস বিল</td>
+                            <td class="py-1 px-3 text-right font-semibold" id="tblGas_1a">১,০০০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৩. বিদ্যুৎ বিল</td>
+                            <td class="py-1 px-3 text-right" id="tblElec_1a">০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৪. পানি বিল</td>
+                            <td class="py-1 px-3 text-right" id="tblWater_1a">০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৫. ময়লা ও গার্ড বিল</td>
+                            <td class="py-1 px-3 text-right" id="tblGuard_1a">০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৬. অন্যান্য চার্জ</td>
+                            <td class="py-1 px-3 text-right" id="tblOther_1a">০/-</td>
+                        </tr>
+                        <tr class="font-bold bg-slate-50 border-t border-slate-800">
+                            <td class="py-1.5 px-3 border-r border-slate-800 text-right">সর্বমোট টাকা:</td>
+                            <td class="py-1.5 px-3 text-right text-indigo-950 text-sm font-black underline decoration-double" id="tblTotal_1a">৬,৫০০/-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer / Validation signatures -->
+            <div class="flex justify-between items-end text-xs pt-1.5 mt-1 border-t border-slate-100">
+                <div class="text-slate-600">
+                    <p>কথায়: <span id="wordTotal_1a" class="border-b border-dashed border-slate-500 font-semibold px-2 text-slate-800">ছয় হাজার পাঁচশত টাকা মাত্র</span></p>
+                </div>
+                <div class="flex gap-12 text-center mr-2">
+                    <div class="w-24">
+                        <div class="border-b border-slate-400 h-6"></div>
+                        <p class="text-[10px] text-slate-500 mt-1">ভাড়াটিয়ার স্বাক্ষর</p>
+                    </div>
+                    <div class="w-28 font-bold">
+                        <div class="border-b border-slate-800 h-6"></div>
+                        <p class="text-[10px] text-slate-800 mt-1">মালিকের স্বাক্ষর</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== RECEIPT 2: FLAT 1B ==================== -->
+        <div class="receipt-card">
+            <!-- Header -->
+            <div class="flex items-start justify-between border-b-2 border-slate-800 pb-2">
+                <div class="flex-1">
+                    <h4 class="text-2xl font-black text-slate-900 tracking-wide">বাড়ি ভাড়ার রসিদ</h4>
+                    <p class="text-xs text-slate-700 mt-0.5">ঠিকানা: ১০০/৬- এ, মধ্য পীরের বাগ (বোম্বাই গলি), ঢাকা- ১২১৬</p>
+                </div>
+                <div class="text-right flex flex-col items-end">
+                    <span class="text-lg font-bold bg-slate-900 text-white px-3 py-1 rounded">ফ্ল্যাট: 1B (জাকির)</span>
+                </div>
+            </div>
+
+            <!-- Metadata Info Row -->
+            <div class="flex justify-between items-center text-sm font-semibold my-1.5 text-slate-800">
+                <div>মাস ও বছর: <span id="viewMonthYear_1b" class="border-b border-dashed border-slate-800 px-2 text-indigo-900 font-bold">জুন ২০২৬</span></div>
+                <div>তারিখ: <span class="border-b border-dashed border-slate-800 px-6"></span></div>
+            </div>
+
+            <!-- Bill Breakdown Table -->
+            <div class="flex-grow">
+                <table class="w-full text-xs text-left text-slate-800 border border-slate-800">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-800">
+                            <th class="py-1 px-3 border-r border-slate-800">বিবরণ</th>
+                            <th class="py-1 px-3 text-right w-[150px]">টাকার পরিমাণ (টাকা/-)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-300">
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">১. বাসা ভাড়া</td>
+                            <td class="py-1 px-3 text-right font-semibold" id="tblRent_1b">৫,০০০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">২. গ্যাস বিল</td>
+                            <td class="py-1 px-3 text-right font-semibold" id="tblGas_1b">১,০৮০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৩. বিদ্যুৎ বিল</td>
+                            <td class="py-1 px-3 text-right" id="tblElec_1b">০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৪. পানি বিল</td>
+                            <td class="py-1 px-3 text-right" id="tblWater_1b">০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৫. ময়লা ও গার্ড বিল</td>
+                            <td class="py-1 px-3 text-right" id="tblGuard_1b">০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৬. অন্যান্য চার্জ</td>
+                            <td class="py-1 px-3 text-right" id="tblOther_1b">০/-</td>
+                        </tr>
+                        <tr class="font-bold bg-slate-50 border-t border-slate-800">
+                            <td class="py-1.5 px-3 border-r border-slate-800 text-right">সর্বমোট টাকা:</td>
+                            <td class="py-1.5 px-3 text-right text-indigo-950 text-sm font-black underline decoration-double" id="tblTotal_1b">৬,০৮০/-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer / Validation signatures -->
+            <div class="flex justify-between items-end text-xs pt-1.5 mt-1 border-t border-slate-100">
+                <div class="text-slate-600">
+                    <p>কথায়: <span id="wordTotal_1b" class="border-b border-dashed border-slate-500 font-semibold px-2 text-slate-800">ছয় হাজার আশি টাকা মাত্র</span></p>
+                </div>
+                <div class="flex gap-12 text-center mr-2">
+                    <div class="w-24">
+                        <div class="border-b border-slate-400 h-6"></div>
+                        <p class="text-[10px] text-slate-500 mt-1">ভাড়াটিয়ার স্বাক্ষর</p>
+                    </div>
+                    <div class="w-28 font-bold">
+                        <div class="border-b border-slate-800 h-6"></div>
+                        <p class="text-[10px] text-slate-800 mt-1">মালিকের স্বাক্ষর</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== RECEIPT 3: FLAT FF ==================== -->
+        <div class="receipt-card">
+            <!-- Header -->
+            <div class="flex items-start justify-between border-b-2 border-slate-800 pb-2">
+                <div class="flex-1">
+                    <h4 class="text-2xl font-black text-slate-900 tracking-wide">বাড়ি ভাড়ার রসিদ</h4>
+                    <p class="text-xs text-slate-700 mt-0.5">ঠিকানা: ১০০/৬- এ, মধ্য পীরের বাগ (বোম্বাই গলি), ঢাকা- ১২১৬</p>
+                </div>
+                <div class="text-right flex flex-col items-end">
+                    <span class="text-lg font-bold bg-slate-900 text-white px-3 py-1 rounded">ফ্ল্যাট: FF (ঈশান)</span>
+                </div>
+            </div>
+
+            <!-- Metadata Info Row -->
+            <div class="flex justify-between items-center text-sm font-semibold my-1.5 text-slate-800">
+                <div>মাস ও বছর: <span id="viewMonthYear_ff" class="border-b border-dashed border-slate-800 px-2 text-indigo-900 font-bold">জুন ২০২৬</span></div>
+                <div>তারিখ: <span class="border-b border-dashed border-slate-800 px-6"></span></div>
+            </div>
+
+            <!-- Bill Breakdown Table -->
+            <div class="flex-grow">
+                <table class="w-full text-xs text-left text-slate-800 border border-slate-800">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-900 font-bold border-b border-slate-800">
+                            <th class="py-1 px-3 border-r border-slate-800">বিবরণ</th>
+                            <th class="py-1 px-3 text-right w-[150px]">টাকার পরিমাণ (টাকা/-)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-300">
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">১. বাসা ভাড়া</td>
+                            <td class="py-1 px-3 text-right font-semibold" id="tblRent_ff">৬,৫০০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">২. গ্যাস বিল</td>
+                            <td class="py-1 px-3 text-right font-semibold" id="tblGas_ff">১,০৮০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৩. বিদ্যুৎ বিল</td>
+                            <td class="py-1 px-3 text-right" id="tblElec_ff">০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৪. পানি বিল</td>
+                            <td class="py-1 px-3 text-right" id="tblWater_ff">০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৫. ময়লা ও গার্ড বিল</td>
+                            <td class="py-1 px-3 text-right" id="tblGuard_ff">০/-</td>
+                        </tr>
+                        <tr>
+                            <td class="py-1 px-3 border-r border-slate-800">৬. অন্যান্য চার্জ</td>
+                            <td class="py-1 px-3 text-right" id="tblOther_ff">০/-</td>
+                        </tr>
+                        <tr class="font-bold bg-slate-50 border-t border-slate-800">
+                            <td class="py-1.5 px-3 border-r border-slate-800 text-right">সর্বমোট টাকা:</td>
+                            <td class="py-1.5 px-3 text-right text-indigo-950 text-sm font-black underline decoration-double" id="tblTotal_ff">৭,৫৮০/-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer / Validation signatures -->
+            <div class="flex justify-between items-end text-xs pt-1.5 mt-1 border-t border-slate-100">
+                <div class="text-slate-600">
+                    <p>কথায়: <span id="wordTotal_ff" class="border-b border-dashed border-slate-500 font-semibold px-2 text-slate-800">সাত হাজার পাঁচশত আশি টাকা মাত্র</span></p>
+                </div>
+                <div class="flex gap-12 text-center mr-2">
+                    <div class="w-24">
+                        <div class="border-b border-slate-400 h-6"></div>
+                        <p class="text-[10px] text-slate-500 mt-1">ভাড়াটিয়ার স্বাক্ষর</p>
+                    </div>
+                    <div class="w-28 font-bold">
+                        <div class="border-b border-slate-800 h-6"></div>
+                        <p class="text-[10px] text-slate-800 mt-1">মালিকের স্বাক্ষর</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Extra Space for Visual Padding on Dashboard -->
+    <div class="no-print h-24"></div>
+
+    <script>
+        // Mapping numbers to Bangla words for receipts
+        const banglaNumbers = {
+            '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
+            '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯'
+        };
+
+        function toBanglaNumber(number) {
+            if (number === undefined || number === null) return '';
+            const str = number.toString();
+            let result = '';
+            for (let i = 0; i < str.length; i++) {
+                if (banglaNumbers[str[i]]) {
+                    result += banglaNumbers[str[i]];
+                } else {
+                    result += str[i];
+                }
+            }
+            return result;
+        }
+
+        function formatCurrencyBangla(amount) {
+            // Converts standard JS number to clean Bangla representation like "১,৫০০/-"
+            const formattedNum = amount.toLocaleString('en-IN');
+            return toBanglaNumber(formattedNum) + '/-';
+        }
+
+        // Beautiful custom logic to convert amount to Bangla words
+        function amountToBanglaWords(amount) {
+            if (amount === 0) return "শূন্য টাকা মাত্র";
+            
+            const singleDigits = ["", "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়"];
+            const teens = ["দশ", "এগারো", "বারো", "তেরো", "চৌদ্দ", "পনেরো", "ষোলো", "সতেরো", "আঠারো", "উনিশ"];
+            const tens = ["", "", "বিশ", "ত্রিশ", "চল্লিশ", "পঞ্চাশ", "ষাট", "সত্তর", "আশি", "নব্বই"];
+            
+            function convertUnderHundred(n) {
+                if (n < 10) return singleDigits[n];
+                if (n >= 10 && n < 20) return teens[n - 10];
+                const tenDigit = Math.floor(n / 10);
+                const unitDigit = n % 10;
+                if (unitDigit === 0) return tens[tenDigit];
+                return tens[tenDigit] + " " + singleDigits[unitDigit];
+            }
+
+            let words = "";
+
+            if (amount >= 100000) {
+                const lakh = Math.floor(amount / 100000);
+                words += convertUnderHundred(lakh) + " লাখ ";
+                amount %= 100000;
+            }
+
+            if (amount >= 1000) {
+                const thousand = Math.floor(amount / 1000);
+                words += convertUnderHundred(thousand) + " হাজার ";
+                amount %= 1000;
+            }
+
+            if (amount >= 100) {
+                const hundred = Math.floor(amount / 100);
+                words += singleDigits[hundred] + "শত ";
+                amount %= 100;
+            }
+
+            if (amount > 0) {
+                words += convertUnderHundred(amount);
+            }
+
+            return words.trim() + " টাকা মাত্র";
+        }
+
+        // Synchronize Global month and year selections to receipts
+        function syncGlobalSettings() {
+            const month = document.getElementById('globalMonth').value;
+            const year = document.getElementById('globalYear').value;
+            const formattedYear = toBanglaNumber(year);
+            const displayStr = `${month} ${formattedYear}`;
+
+            document.getElementById('viewMonthYear_1a').innerText = displayStr;
+            document.getElementById('viewMonthYear_1b').innerText = displayStr;
+            document.getElementById('viewMonthYear_ff').innerText = displayStr;
+        }
+
+        // Live Calculator and Dynamic Receipt updates
+        function updateReceipts() {
+            const flats = [
+                { id: '1a', rent: 5500, gas: 1000 },
+                { id: '1b', rent: 5000, gas: 1080 },
+                { id: 'ff', rent: 6500, gas: 1080 }
+            ];
+
+            flats.forEach(flat => {
+                // Get inputs from dashboard DOM
+                const elec = parseInt(document.getElementById(`elec_${flat.id}`).value) || 0;
+                const water = parseInt(document.getElementById(`water_${flat.id}`).value) || 0;
+                const guard = parseInt(document.getElementById(`guard_${flat.id}`).value) || 0;
+                const other = parseInt(document.getElementById(`other_${flat.id}`).value) || 0;
+
+                // Total Calculation
+                const total = flat.rent + flat.gas + elec + water + guard + other;
+
+                // Populate print view cells
+                document.getElementById(`tblRent_${flat.id}`).innerText = formatCurrencyBangla(flat.rent);
+                document.getElementById(`tblGas_${flat.id}`).innerText = formatCurrencyBangla(flat.gas);
+                document.getElementById(`tblElec_${flat.id}`).innerText = formatCurrencyBangla(elec);
+                document.getElementById(`tblWater_${flat.id}`).innerText = formatCurrencyBangla(water);
+                document.getElementById(`tblGuard_${flat.id}`).innerText = formatCurrencyBangla(guard);
+                document.getElementById(`tblOther_${flat.id}`).innerText = formatCurrencyBangla(other);
+                document.getElementById(`tblTotal_${flat.id}`).innerText = formatCurrencyBangla(total);
+
+                // Populate words text
+                document.getElementById(`wordTotal_${flat.id}`).innerText = amountToBanglaWords(total);
+            });
+        }
+
+        // Init App on Load
+        window.onload = function() {
+            syncGlobalSettings();
+            updateReceipts();
+        }
+    </script>
+</body>
+</html>
